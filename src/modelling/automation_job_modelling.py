@@ -15,7 +15,7 @@ def delete_line_break(df):
     return df_copy
 
 # Iniciamos el proceso de carga y extraccion de los embeddings (correspondientes a todos las ofertas que tengamos)
-def run_automation_modelling_cv(data_job):
+def run_automation_modelling_job(data_job):
     # Eliminamos caracter '\n' salto de linea
     df_job=delete_line_break(data_job)
   
