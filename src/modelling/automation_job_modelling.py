@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from transformers import AutoTokenizer, TFAutoModel
-from sklearn.metrics.pairwise import cosine_similarity
 
 # Carga del modelo y tokenizador
 model_name = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
@@ -31,4 +30,4 @@ def run_automation_modelling_job(data_job):
 
     # Normaliza los vectores de embedding para asegurarte de que tengan longitud unitaria
     normalized_embeddings_job = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-    return normalized_embeddings_job, data_job
+    return normalized_embeddings_job, df_job
