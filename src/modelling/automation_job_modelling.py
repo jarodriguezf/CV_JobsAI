@@ -1,17 +1,10 @@
 import pandas as pd
 import numpy as np
-from transformers import AutoTokenizer, TFAutoModel
+from utils import carga_modelo_tokenizer, delete_line_break
 
 # Carga del modelo y tokenizador
 model_name = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = TFAutoModel.from_pretrained(model_name)
-
-# Eliminamos salto caracter \n
-def delete_line_break(df):
-    df_copy = df.copy()
-    df_copy.iloc[:, 1] = df_copy.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
-    return df_copy
+tokenizer, model = carga_modelo_tokenizer(model_name)
 
 # Iniciamos el proceso de carga y extraccion de los embeddings (correspondientes a todos las ofertas que tengamos)
 def run_automation_modelling_job(data_job):
