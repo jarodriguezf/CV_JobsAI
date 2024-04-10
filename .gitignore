@@ -1,3 +1,6 @@
 /data/raw_data
 /src/modelling/model_cv_Bert_version.ipynb
 /src/modelling/model_cv_Roberta_version.ipynb
+/data/automation_scripts_data/__pycache__
+/src/modelling/__pycache__
+/src/modelling/automation_scripts_model/__pycache__
