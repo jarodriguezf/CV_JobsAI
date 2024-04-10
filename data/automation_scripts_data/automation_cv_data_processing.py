@@ -91,7 +91,7 @@ def join_tokens(df):
 
 
 def run_processing_data_cv(data_cv_software, data_cv_network, data_cv_IA):
-    print('--INICIANDO PROCESAMIENTO--')
+    print('--INICIANDO PROCESAMIENTO DE DATOS CVS--')
     print('Analizando CVs y extraccion de categorias...')
     div_cv_SoftwareDev = division_cvs(data_cv_software)
     div_cv_NetworkEng= division_cvs(data_cv_network)

@@ -87,7 +87,7 @@ def join_tokens(df):
 
 
 def run_processing_data_job(data_job_software, data_job_network, data_job_IA):
-    print('--INICIANDO PROCESAMIENTO--')
+    print('--INICIANDO PROCESAMIENTO DE DATOS JOBS--')
     print('Analizando Jobs y extraccion de categorias...')
     div_job_SoftwareDev = division_jobs(data_job_software)
     div_job_NetworkEng= division_jobs(data_job_network)
