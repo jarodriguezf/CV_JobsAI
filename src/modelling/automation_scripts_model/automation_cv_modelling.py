@@ -23,4 +23,4 @@ def run_automation_modelling_cv(data_cv):
 
     # Normaliza los vectores de embedding para asegurarte de que tengan longitud unitaria
     normalized_embeddings_cv = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-    return normalized_embeddings_cv, df_cvs
+    return normalized_embeddings_cv

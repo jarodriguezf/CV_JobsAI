@@ -23,4 +23,4 @@ def run_automation_modelling_job(data_job):
 
     # Normaliza los vectores de embedding para asegurarte de que tengan longitud unitaria
     normalized_embeddings_job = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-    return normalized_embeddings_job, df_job
+    return normalized_embeddings_job
