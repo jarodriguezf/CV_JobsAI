@@ -107,4 +107,4 @@ def run_processing_data_job(data_job_software, data_job_network, data_job_IA):
     print('Aplicando mejoras...')
     df = join_tokens(df)
     print('--FIN DEL PROCESAMIENTO--')
-    return df
+    return df, df_data

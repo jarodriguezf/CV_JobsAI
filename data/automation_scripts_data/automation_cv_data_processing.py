@@ -111,5 +111,5 @@ def run_processing_data_cv(data_cv_software, data_cv_network, data_cv_IA):
     print('Aplicando mejoras...')
     df = join_tokens(df)
     print('--FIN DEL PROCESAMIENTO--')
-    return df
+    return df, df_data
 
