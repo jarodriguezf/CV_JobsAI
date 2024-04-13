@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Introduce tu CV y oferta laboral" />
+    <meta name="author" content="Tu Nombre" />
+    <title>Control panel</title>
+    <link rel="icon" type="image/x-icon" href="/static/assets/favicon.ico" />
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link href="/static/css/styles.css" rel="stylesheet" />
+</head>
+<body id="page-top">
+    <!-- Navigation-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
+        <div class="container px-4">
+            <a class="navbar-brand" href="/">CV & Jobs AI - Match</a>
+            <!-- Resto de la navegación -->
+        </div>
+    </nav>
+    <!-- CV and Job Offer Section-->
+    <section id="cvJobOffer">
+        <div class="container px-4">
+            <div class="row gx-4 justify-content-center">
+                <div class="col-lg-8">
+                    <h2>Introduce tu CV o la Oferta Laboral</h2>
+                    <!-- Formularios para CV y oferta laboral -->
+                    <form id="cvForm">
+                        <!-- CV Input -->
+                        <div class="form-group">
+                            <textarea class="form-control" id="cvInput" rows="10" placeholder="Introduce nuevo CV"></textarea>
+                            <button class="btn btn-primary mt-3" type="button" onclick="saveCV()">Guardar CV</button>
+                        </div>
+                    </form>
+                    <hr>
+                    <form id="jobOfferForm">
+                        <!-- Job Offer Input -->
+                        <div class="form-group">
+                            <textarea class="form-control" id="jobOfferInput" rows="10" placeholder="Introduce nueva oferta"></textarea>
+                            <button class="btn btn-primary mt-3" type="button" onclick="saveJobOffer()">Guardar Oferta y Extraer CVs</button>
+                        </div>
+                    </form>
+                    <hr>
+                </div>
+            </div>
+        </div>
+    </section> 
+    <script>
+        function showAlert(message) {
+            alert(message);
+        }
+
+        // Evento para el botón de guardar CV
+        document.getElementById('cvForm').querySelector('button').addEventListener('click', function() {
+            fetch('/save-cv', {
+                method: 'POST',
+                // Aquí puedes agregar los datos que necesitas enviar a tu API
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert('CV guardado'); // Muestra el mensaje de confirmación
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+
+        // Evento para el botón de guardar oferta de trabajo
+        document.getElementById('jobOfferForm').querySelector('button').addEventListener('click', function() {
+            fetch('/save-job-offer', {
+                method: 'POST',
+                // Aquí puedes agregar los datos que necesitas enviar a tu API
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert('Oferta de trabajo guardada y CVs extraídos'); // Muestra el mensaje de confirmación
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
