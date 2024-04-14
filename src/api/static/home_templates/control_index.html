@@ -7,6 +7,12 @@
     <meta name="author" content="Tu Nombre" />
     <title>Control panel</title>
     <link rel="icon" type="image/x-icon" href="/static/assets/favicon.ico" />
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- jQuery (Necesario para Bootstrap) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Bootstrap JS (Necesario para modales) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <!-- Core theme CSS (includes Bootstrap)-->
     <link href="/static/css/styles.css" rel="stylesheet" />
 </head>
@@ -29,7 +35,7 @@
                         <!-- CV Input -->
                         <div class="form-group">
                             <textarea class="form-control" id="cvInput" rows="10" placeholder="Introduce nuevo CV"></textarea>
-                            <button class="btn btn-primary mt-3" type="button" onclick="saveCV()">Guardar CV</button>
+                            <button class="btn btn-primary mt-3" type="button" onclick="mostrarModal(saveCV)">Guardar CV</button>
                         </div>
                     </form>
                     <hr>
@@ -37,7 +43,7 @@
                         <!-- Job Offer Input -->
                         <div class="form-group">
                             <textarea class="form-control" id="jobOfferInput" rows="10" placeholder="Introduce nueva oferta"></textarea>
-                            <button class="btn btn-primary mt-3" type="button" onclick="saveJobOffer()">Guardar Oferta y Extraer CVs</button>
+                            <button class="btn btn-primary mt-3" type="button" onclick="mostrarModal(saveJobs)">Guardar Oferta y Extraer CVs</button>
                         </div>
                     </form>
                     <hr>
@@ -46,39 +52,94 @@
         </div>
     </section> 
     <script>
+        let opcion;// variable global, almacena la opcion elegida en el pop up
+        let callback; // variable global, almacena la funcion a llamar despues de seleccionar la opcion
+
+        // Función para manejar la selección de opciones
+        function seleccionarOpcion(opcionSeleccionada) {
+            // Llevamos la opcion a la api, para ser incluida en la insercion de cv o ofertas laborales 
+            opcion = opcionSeleccionada;
+            setTimeout(function() {
+                $('#opcionesModal').modal('hide');
+                // Llamada a cv o jobs
+                callback();
+            }, 500);
+        }
+
+        // Función para mostrar el modal con opciones
+        function mostrarModal(cb) {
+            callback = cb;
+            $('#opcionesModal').modal('show');
+        }
+
         function showAlert(message) {
             alert(message);
         }
 
-        // Evento para el botón de guardar CV
-        document.getElementById('cvForm').querySelector('button').addEventListener('click', function() {
+        // Función para guardar el CV
+        function saveCV() {
+            console.log(opcion)
+            
+            const cvInput = document.getElementById('cvInput').value; // Obtenemos objeto del textArea
+            const formData = new FormData();
+            formData.append('data', cvInput);
+            formData.append('opcion', opcion);
             fetch('/save-cv', {
                 method: 'POST',
-                // Aquí puedes agregar los datos que necesitas enviar a tu API
+                body: formData // Enviamos a la API los datos
             })
             .then(response => response.json())
             .then(data => {
-                showAlert('CV guardado'); // Muestra el mensaje de confirmación
+                if(data.message){
+                    showAlert(data.message);//Muestra el mensaje de confirmacion
+                }
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
-        });
+        }
 
-        // Evento para el botón de guardar oferta de trabajo
-        document.getElementById('jobOfferForm').querySelector('button').addEventListener('click', function() {
+        // Función para guardar el CV
+        function saveJobs() {
+            console.log(opcion)
+            
+            const jobInput = document.getElementById('jobOfferInput').value; // Obtenemos objeto del textArea
+            const formData = new FormData();
+            formData.append('data', jobInput);
+            formData.append('opcion', opcion);
             fetch('/save-job-offer', {
                 method: 'POST',
-                // Aquí puedes agregar los datos que necesitas enviar a tu API
+                body: formData // Enviamos a la API los datos
             })
             .then(response => response.json())
             .then(data => {
-                showAlert('Oferta de trabajo guardada y CVs extraídos'); // Muestra el mensaje de confirmación
+                if(data.message){
+                    showAlert(data.message);//Muestra el mensaje de confirmacion
+                }
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
-        });
+        }
+
     </script>
+    <!-- Modal HTML -->
+    <div class="modal fade" id="opcionesModal" tabindex="-1" role="dialog" aria-labelledby="opcionesModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="opcionesModalLabel">Selecciona una opción a guardar</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <button type="button" class="btn btn-primary" onclick="seleccionarOpcion('software')">Software</button>
+                    <button type="button" class="btn btn-primary" onclick="seleccionarOpcion('ia')">IA</button>
+                    <button type="button" class="btn btn-primary" onclick="seleccionarOpcion('network')">Network</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
