@@ -26,66 +26,56 @@
             </div>
         </div>
     </nav>
-    <!-- Seccion para los botones de mostrar y modal -->
+    <!-- Seccion para los botones de mostrar cv o oferta -->
     <section class="py-5">
         <div class="container" style="width: 100%; text-align: center; margin-top: 40px; overflow: auto;">
             <!-- Botones para mostrar las listas -->
-            <button class="btn btn-primary mb-3" style="margin-right: 40px;" onclick="prepararYMostrarModal('cv')">Mostrar CVs</button>
-            <button class="btn btn-primary mb-3" style="margin-left: 40px;" onclick="prepararYMostrarModal('ofertas')">Mostrar Ofertas Laborales</button>
+            <button class="btn btn-primary mb-3" style="margin-right: 40px;" onclick="prepararYMostrarArchivo('cv')">Mostrar CVs</button>
+            <button class="btn btn-primary mb-3" style="margin-left: 40px;" onclick="prepararYMostrarArchivo('ofertas')">Mostrar Ofertas Laborales</button>
 
             <hr>
 
-            <!-- Modal para mostrar las listas -->
-            <div class="modal fade" id="listaModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true" style="text-align: left; margin-top: 10px;">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalLabel">Lista</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">×</span>
-                            </button>
-                        </div>
-                        <div class="modal-body" id="modalBody">
-                            <!-- Aquí se insertará la lista de elementos -->
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+              
         </div>
     </section>
 </body>
 <script>
-    // Función para preparar y mostrar el modal con la lista de IDs y texto
-    function prepararYMostrarModal(tipo) {
-        // Datos de ejemplo
-        var datos = {
-            'cv': [
-                { id: 1, texto: 'CV1' },
-                { id: 2, texto: 'CV2' }
-            ],
-            'ofertas': [
-                { id: 1, texto: 'Oferta1' },
-                { id: 2, texto: 'Oferta2' }
-            ]
-        };
+    // Función para preparar y mostrar la informacion acerca de los CV o ofertas
+    function prepararYMostrarArchivo(tipo) {
+    // Hacer una petición GET a la API
+        if (tipo==='cv'){
+            fetch('/get-cvs')
+                .then(response => response.text())
+                .then(text => {
+                    // Eliminamos expresiones '\n'
+                    const trimmedtext = text.replace(/(?:\\r\\n|\\r|\\n)/g, '');
+                    // Abre una nueva pestaña
+                    const newTab = window.open();
 
-        // Seleccionar el cuerpo del modal para insertar los datos
-        var modalBody = document.getElementById('modalBody');
-        modalBody.innerHTML = ''; // Limpiar el contenido anterior
+                    // Excribimos el html
+                    newTab.document.write(trimmedtext);
 
-        // Crear la lista de elementos
-        datos[tipo].forEach(function(item) {
-            var p = document.createElement('p');
-            p.textContent = 'ID: ' + item.id + ', Texto: ' + item.texto;
-            modalBody.appendChild(p);
-        });
+                    newTab.document.close();
+                })
+                .catch(error => console.error('Error:', error));
+        }else if (tipo==='ofertas'){
+            fetch('/get-jobs')
+                .then(response => response.text())
+                .then(text => {
+                    // Eliminamos expresiones '\n'
+                    const trimmedtext = text.replace(/(?:\\r\\n|\\r|\\n)/g, '');
+                    // Abre una nueva pestaña
+                    const newTab = window.open();
 
-        // Mostrar el modal
-        $('#listaModal').modal('show');
-    }
+                    // Excribimos el html
+                    newTab.document.write(trimmedtext);
+
+                    newTab.document.close();
+                })
+                .catch(error => console.error('Error:', error));
+        }    
+    }  
+
 </script>
  <!-- Añadir jQuery para Bootstrap -->
  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
