@@ -12,7 +12,7 @@ app = FastAPI()
 # Archivos estaticos (front)
 app.mount("/static", StaticFiles(directory="static/landing_page"), name="static")
 templates_landing = Jinja2Templates(directory="static/landing_page")
-templates_home_control = Jinja2Templates(directory="static/home_templates")
+insert_data_template = Jinja2Templates(directory="static/insert-data-pages")
 
 # Carga de la landing page
 @app.get("/")
@@ -21,9 +21,9 @@ async def root(request: Request):
 
 
 # Carga de pagina home_control (a traves de "index.html")
-@app.get("/home")
+@app.get("/insert-data")
 async def home(request: Request):
-    return templates_home_control.TemplateResponse("control_index.html", {"request": request})
+    return insert_data_template.TemplateResponse("control_index.html", {"request": request})
 
 
 # Endpoint para el botón de guardar CV
