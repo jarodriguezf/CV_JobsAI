@@ -49,7 +49,7 @@
                     <option value="0.6">Equilibrado</option>
                     <option value="0.8">Alto</option>
                 </select>
-                <button class="btn btn-primary btn-sm mb-2" onclick="calcularSimilitud()">Calcular</button>
+                <button class="btn btn-primary btn-sm mb-2" onclick="mostrarSimilitud()">Calcular</button>
             </div>
         </div>
     </section>
@@ -69,16 +69,17 @@
         }) 
         .then(response => response.json())
         .then(data => {
-            if(data.message){
+            console.log('Length of data:', data.length);
+            if(data){
                 console.log('Datos recibido correctamente')
             }
-            return data;  // return the data here
+            return data; // retornamos el dato devuelto por la API
         })
         .catch(error => console.error('Error:', error));  
     }
 
     // Funcion para realizar el calculo de la similitud del coseno (mostramos en pantalla resultados)
-    async function calcularSimilitud(){
+    async function mostrarSimilitud(){
 
         // Eliminar resultados anteriores
         const oldResults = document.getElementById('resultsContainer');
@@ -91,7 +92,8 @@
         if (Number.isInteger(ofertaLaboralId) && ofertaLaboralId >= 0){ 
             // llamada a funcion que retorna los cv mas similares
             const similarCVs = await getSimilarCVs(ofertaLaboralId, gradoSimilitud);
-            console.log(similarCVs.cv)
+
+            console.log(similarCVs)
             
             // Creamos contenedor para pintar resultados
             const resultsContainer = document.createElement('div');
@@ -101,22 +103,33 @@
 
             // Añadir header y titulo principal en funcion de la oferta dada
             const jobOfferHeader = document.createElement('h2');
+            jobOfferHeader.id = 'jobOfferHeader';
+            jobOfferHeader.style.marginLeft = '15%';
+            jobOfferHeader.style.marginBottom = '20px';
             jobOfferHeader.textContent = 'CVs mas aptos para la oferta laboral con ID: ' + ofertaLaboralId;
             resultsContainer.appendChild(jobOfferHeader);
+            
+            // Añadir header y titulo principal en funcion de la oferta dada
+            const separator = document.createElement('hr');
+            resultsContainer.appendChild(separator);
 
             // Añadir a listas los CVs 
             const cvList = document.createElement('ul');
             cvList.id = 'cvList';
             let count = 0;
             let page = 1;
-            for (const [id, cv] of Object.entries(similarCVs.cv)) {
+            for (const cv of similarCVs) {
                 const cvListItem = document.createElement('li');
-                cvListItem.textContent = `ID: ${id} - CV: ${cv}`;
+                cvListItem.innerHTML = `ID: ${cv.id}<br>CV: ${cv.cv}`;
+                cvListItem.style.border= '1px solid #ccc';
+                cvListItem.style.borderRadius = '5px';
+                cvListItem.style.marginBottom = '10px';
+                cvListItem.style.padding  = '10px';
                 cvListItem.className = `page-${page}`;
                 cvListItem.style.display = page === 1 ? 'block' : 'none';
                 cvList.appendChild(cvListItem);
                 count++;
-                if (count % 5 === 0) {
+                if (count % 5 === 0 && count < similarCVs.length) {
                     page++;
                 }
             }

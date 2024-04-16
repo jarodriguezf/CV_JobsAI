@@ -165,9 +165,13 @@ async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
         # Extraemos el texto correspondiente al id de los cv con el umbral retornado
         text_cv = id_to_textCV(values_cv_threshold, df_cvs)
         text_job = df_jobs['job'][id]
+
+        print('CVs y Job')
         print([cv for cv in text_cv])
         print(text_job)
-        return {"cv": text_cv, "job": text_job}
+        print('Longitud de cvs',len(text_cv))
+
+        return [{"id": id, "cv": cv} for id, cv in text_cv.items()] # convertimos a array antes depasar al front
     except Exception as e:
         print('Error. No se ha podido procesar correctamente el calculo de similitud.')
         raise HTTPException(status_code=400, detail=str(e))
