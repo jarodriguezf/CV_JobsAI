@@ -14,6 +14,9 @@ from automation_cv_data_processing import run_processing_data_cv# type: ignore
 from automation_job_data_processing import run_processing_data_job # type: ignore
 from automation_scripts_model.automation_cv_modelling import run_automation_modelling_cv# type: ignore
 from automation_scripts_model.automation_job_modelling import run_automation_modelling_job# type: ignore
+
+# -- INICIO DE VARIABLES GLOBALES Y INSTANCIAS DE PROCESAMIENTO Y CARGA
+
 # Instancia de FastAPI
 app = FastAPI()
 
@@ -41,10 +44,13 @@ df_jobs_processed, df_job_raw = run_processing_data_job(raw_jobs_SoftwareDev,raw
 embeddings_cv = run_automation_modelling_cv(df_cv_processed)
 embeddings_job= run_automation_modelling_job(df_jobs_processed)
 
+# -- INICIO DE ENDPOINTS --
+
 # Carga de la landing page
 @app.get("/")
 async def root(request: Request):
     return templates_landing.TemplateResponse("index.html", {"request": request})
+
 
 
 # Carga de pagina insercion de datos (a traves de "index.html")
@@ -53,10 +59,12 @@ async def home(request: Request):
     return insert_data_template.TemplateResponse("control_index.html", {"request": request})
 
 
+
 # Carga de pagina mostrar informacion y criba (a traves de "control_index.html")
 @app.get("/show-similarities")
 async def home(request: Request):
     return mostrar_cribar.TemplateResponse("similarities.html", {"request": request})
+
 
 
 # Endpoint para el botón de guardar CV
@@ -73,6 +81,7 @@ async def save_cv(data: bytes = Form(...), opcion: bytes = Form(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+
 # Endpoint para el botón de guardar oferta de trabajo
 @app.post("/save-job-offer")
 async def save_job_offer(data: bytes = Form(...), opcion: bytes = Form(...)):
@@ -86,6 +95,7 @@ async def save_job_offer(data: bytes = Form(...), opcion: bytes = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
+
 
 # Cargamos los datos de CV y convertimos a html
 @app.get('/get-cvs')
@@ -125,6 +135,8 @@ async def get_all_jobs():
         print('Error. Se produjo un error al obtener las ofertas laborales')
         raise HTTPException(status_code=400, detail=str(e))
 
+
+
 # Funciones y endpoint para calcular la similitud de CVs para una oferta dada
 def clean_df_original(df_cv):
     df_cv.iloc[:, 1] = df_cv.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
@@ -141,6 +153,20 @@ def id_to_textCV(list_cv_id_simil, df_cvs):
     text_cv = df_cvs.loc[id_cv, 'cv']
     return text_cv
 
+def insert_list_cosine_similarities(embeddings_cv, embedding_job):
+    # Iteramos sobre todos los cv de nuestros embeddings, almacenando la similitud dada por la oferta pasada por parametro
+    list_cosine_cv = []
+    for cv in range(len(embeddings_cv)):
+        # Calcular la media de los embeddings
+        mean_embedding_cv = np.mean(embeddings_cv[cv], axis=0)
+        list_cosine_cv.append(cosine_similarity([embedding_job], [mean_embedding_cv])[0, 0])
+    return list_cosine_cv
+
+def sorted_threshold_cv(list_cosine_cv, similarity):
+    values_cv_threshold = sorted([[i,value] for i,value in enumerate(list_cosine_cv) if value >= similarity],
+                                    key=lambda x: x[1], reverse=True)
+    return values_cv_threshold
+
 # Llamada al modelo (calcula y retorna el id con el texto de los cv mas similares)
 @app.post('/call_model_to_similarities')
 async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
@@ -148,17 +174,12 @@ async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
         # retornamos el embedding de la oferta de trabajo con id dado
         embedding_job=mean_embedding_job_id(id)
 
-        # Iteramos sobre todos los cv de nuestros embeddings, almacenando la similitud dada por la oferta pasada por parametro
-        list_cosine_cv = []
-        for cv in range(len(embeddings_cv)):
-            # Calcular la media de los embeddings
-            mean_embedding_cv = np.mean(embeddings_cv[cv], axis=0)
-            list_cosine_cv.append(cosine_similarity([embedding_job], [mean_embedding_cv])[0, 0])
+        # Añadimos a una lista el calculo de las similitudes
+        list_cosine_cv= insert_list_cosine_similarities(embeddings_cv, embedding_job)
 
         # Almacenamos unicamente los cv cuya similitud sea mayor o igual al umbral dado por parametro, ordenado descendentemente
-        values_cv_threshold = sorted([[i,value] for i,value in enumerate(list_cosine_cv) if value >= similarity],
-                                    key=lambda x: x[1], reverse=True)
-        
+        values_cv_threshold= sorted_threshold_cv(list_cosine_cv, similarity)
+    
         # Limpiamos los saltos de lineas '\n' de los dataframes originales (sin procesar previamente)
         df_cvs= clean_df_original(df_cv_raw)
 
@@ -168,7 +189,8 @@ async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
 
         print('Longitud de cvs',len(text_cv))
 
-        return [{"id": id, "cv": cv} for id, cv in text_cv.items()] # convertimos a array antes depasar al front
+        return [{"id": id, "cv": cv} for id, cv in text_cv.items()] # convertimos a array antes de pasar al front
+    
     except Exception as e:
         print('Error. No se ha podido procesar correctamente el calculo de similitud.')
         raise HTTPException(status_code=400, detail=str(e))
