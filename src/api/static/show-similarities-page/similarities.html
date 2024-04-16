@@ -113,18 +113,19 @@
             const separator = document.createElement('hr');
             resultsContainer.appendChild(separator);
 
-            // Añadir a listas los CVs 
+            // Añadir a listas los CVs (ademas de estilos a cada lista)
             const cvList = document.createElement('ul');
             cvList.id = 'cvList';
             let count = 0;
             let page = 1;
             for (const cv of similarCVs) {
                 const cvListItem = document.createElement('li');
-                cvListItem.innerHTML = `ID: ${cv.id}<br>CV: ${cv.cv}`;
+                cvListItem.innerHTML = `<b>ID:</b> <i>${cv.id}</i><br><b>CV:</b> <i>${cv.cv}</i>`;
                 cvListItem.style.border= '1px solid #ccc';
                 cvListItem.style.borderRadius = '5px';
                 cvListItem.style.marginBottom = '10px';
                 cvListItem.style.padding  = '10px';
+                cvListItem.style.backgroundColor = '#F4F8F9';
                 cvListItem.className = `page-${page}`;
                 cvListItem.style.display = page === 1 ? 'block' : 'none';
                 cvList.appendChild(cvListItem);
