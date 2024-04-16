@@ -14,7 +14,7 @@
     <!-- Navigation-->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
         <div class="container px-4">
-            <a class="navbar-brand" href="#page-top">CV & Jobs AI - Match</a>
+            <a class="navbar-brand" href="/">CV & Jobs AI - Match</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -27,19 +27,128 @@
         </div>
     </nav>
     <!-- Seccion para los botones de mostrar cv o oferta -->
-    <section class="py-5">
-        <div class="container" style="width: 100%; text-align: center; margin-top: 40px; overflow: auto;">
+    <section class="py-5" style="width: 100%; text-align: center; margin-top: 40px; overflow: auto;">
+        <div class="container">
             <!-- Botones para mostrar las listas -->
             <button class="btn btn-primary mb-3" style="margin-right: 40px;" onclick="prepararYMostrarArchivo('cv')">Mostrar CVs</button>
             <button class="btn btn-primary mb-3" style="margin-left: 40px;" onclick="prepararYMostrarArchivo('ofertas')">Mostrar Ofertas Laborales</button>
-
             <hr>
-
-              
+        </div>
+        <div style="margin: 25px;">
+            <h5>Extrae los CVs más similares por cada oferta laboral</h5>
+        </div>
+        <div>
+            <div>
+                <label for="quantity">Indica el ID de la oferta laboral:</label>
+                <input type="number" id="quantity" name="quantity" min="0" style="width: 3em; margin-right: 40px;">
+            </div>
+            <div>
+                <label for="threshold">Indica el grado de similitud a mostrar:</label>
+                <select name="threshold" style="margin-left: 10px;">
+                    <option value="0.4">Bajo</option>
+                    <option value="0.6">Equilibrado</option>
+                    <option value="0.8">Alto</option>
+                </select>
+                <button class="btn btn-primary btn-sm mb-2" onclick="calcularSimilitud()">Calcular</button>
+            </div>
         </div>
     </section>
 </body>
 <script>
+
+    // Llamada a la api retornando objeto JSON con texto tanto de oferta laboral como CVs
+    function getSimilarCVs(ofertaLaboralId, gradoSimilitud) {
+        // Creamos tipo formData para almacenar valores y enviarlos a la api
+        const formData = new FormData();
+        formData.append('id', ofertaLaboralId);
+        formData.append('similarity', gradoSimilitud);
+
+        return fetch('/call_model_to_similarities', {
+            method: 'POST',
+            body: formData 
+        }) 
+        .then(response => response.json())
+        .then(data => {
+            if(data.message){
+                console.log('Datos recibido correctamente')
+            }
+            return data;  // return the data here
+        })
+        .catch(error => console.error('Error:', error));  
+    }
+
+    // Funcion para realizar el calculo de la similitud del coseno (mostramos en pantalla resultados)
+    async function calcularSimilitud(){
+
+        // Eliminar resultados anteriores
+        const oldResults = document.getElementById('resultsContainer');
+        if (oldResults) oldResults.remove();
+
+        // Obtener los valores de los inputs
+        const ofertaLaboralId = parseInt(document.getElementById('quantity').value);
+        const gradoSimilitud = parseFloat(document.querySelector('select[name="threshold"]').value);
+
+        if (Number.isInteger(ofertaLaboralId) && ofertaLaboralId >= 0){ 
+            // llamada a funcion que retorna los cv mas similares
+            const similarCVs = await getSimilarCVs(ofertaLaboralId, gradoSimilitud);
+            console.log(similarCVs.cv)
+            
+            // Creamos contenedor para pintar resultados
+            const resultsContainer = document.createElement('div');
+            resultsContainer.id = 'resultsContainer';
+            resultsContainer.style.width = '50%'; 
+            resultsContainer.style.margin = '0 auto'; 
+
+            // Añadir header y titulo principal en funcion de la oferta dada
+            const jobOfferHeader = document.createElement('h2');
+            jobOfferHeader.textContent = 'CVs mas aptos para la oferta laboral con ID: ' + ofertaLaboralId;
+            resultsContainer.appendChild(jobOfferHeader);
+
+            // Añadir a listas los CVs 
+            const cvList = document.createElement('ul');
+            cvList.id = 'cvList';
+            let count = 0;
+            let page = 1;
+            for (const [id, cv] of Object.entries(similarCVs.cv)) {
+                const cvListItem = document.createElement('li');
+                cvListItem.textContent = `ID: ${id} - CV: ${cv}`;
+                cvListItem.className = `page-${page}`;
+                cvListItem.style.display = page === 1 ? 'block' : 'none';
+                cvList.appendChild(cvListItem);
+                count++;
+                if (count % 5 === 0) {
+                    page++;
+                }
+            }
+            resultsContainer.appendChild(cvList);
+
+            // Añadir botones de paginacion al documento
+            const paginationContainer = document.createElement('div');
+            paginationContainer.id = 'paginationContainer';
+            paginationContainer.style.textAlign = 'right';
+            for (let i = 1; i <= page; i++) {
+                const paginationButton = document.createElement('button');
+                paginationButton.textContent = i;
+                paginationButton.className = 'btn btn-primary btn-sm mb-2';
+                paginationButton.style.margin = '0 5px';
+                paginationButton.onclick = function() {
+                    const items = document.querySelectorAll('#cvList li');
+                    items.forEach(item => {
+                        item.style.display = item.className === `page-${i}` ? 'block' : 'none';
+                    });
+                };
+                paginationContainer.appendChild(paginationButton);
+            }
+            resultsContainer.appendChild(paginationContainer);
+
+            // Añadir el resultado pintado al contenedor inicial
+            document.body.appendChild(resultsContainer);
+
+        }else{
+            alert('Error. Solo es posible introducir numeros enteros mayor que 0. Asegurate que sean enteros. Ej:(0-10)')
+        }
+    }
+    
     // Función para preparar y mostrar la informacion acerca de los CV o ofertas
     function prepararYMostrarArchivo(tipo) {
     // Hacer una petición GET a la API
@@ -52,7 +161,7 @@
                     // Abre una nueva pestaña
                     const newTab = window.open();
 
-                    // Excribimos el html
+                    // Escribimos el html
                     newTab.document.write(trimmedtext);
 
                     newTab.document.close();
@@ -67,7 +176,7 @@
                     // Abre una nueva pestaña
                     const newTab = window.open();
 
-                    // Excribimos el html
+                    // Escribimos el html
                     newTab.document.write(trimmedtext);
 
                     newTab.document.close();

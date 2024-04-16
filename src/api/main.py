@@ -1,16 +1,19 @@
 import sys
 from io import BytesIO
 sys.path.append('../../data/automation_scripts_data/')
+sys.path.append('../modelling/')
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 from fastapi import Request
-from automation_data_save import run_automation_save_data
-from automation_cv_data_processing import run_processing_data_cv
-from automation_job_data_processing import run_processing_data_job
-
+from automation_data_save import run_automation_save_data# type: ignore
+from automation_cv_data_processing import run_processing_data_cv# type: ignore
+from automation_job_data_processing import run_processing_data_job # type: ignore
+from automation_scripts_model.automation_cv_modelling import run_automation_modelling_cv# type: ignore
+from automation_scripts_model.automation_job_modelling import run_automation_modelling_job# type: ignore
 # Instancia de FastAPI
 app = FastAPI()
 
@@ -30,6 +33,14 @@ raw_jobs_SoftwareDev = open('../../data/raw_data/Data_Jobs_SoftwareDeveloper.txt
 raw_jobs_NetworkEng = open('../../data/raw_data/Data_Jobs_NetworkEngineer.txt',encoding='utf-8').read()
 raw_jobs_IADev= open('../../data/raw_data/Data_Jobs_IADeveloper.txt',encoding='utf-8').read()
 
+# Llamamos al procesamiento de datos (retorna dos df, uno con los datos procesados semanticamente y otro en bruto)
+df_cv_processed, df_cv_raw = run_processing_data_cv(raw_cvs_SoftwareDev, raw_cvs_NetworkEng, raw_cvs_IADev)
+df_jobs_processed, df_job_raw = run_processing_data_job(raw_jobs_SoftwareDev,raw_jobs_NetworkEng,raw_jobs_IADev)
+
+# Carga modelo y generar embeddings
+embeddings_cv = run_automation_modelling_cv(df_cv_processed)
+embeddings_job= run_automation_modelling_job(df_jobs_processed)
+
 # Carga de la landing page
 @app.get("/")
 async def root(request: Request):
@@ -40,6 +51,7 @@ async def root(request: Request):
 @app.get("/insert-data")
 async def home(request: Request):
     return insert_data_template.TemplateResponse("control_index.html", {"request": request})
+
 
 # Carga de pagina mostrar informacion y criba (a traves de "control_index.html")
 @app.get("/show-similarities")
@@ -78,30 +90,84 @@ async def save_job_offer(data: bytes = Form(...), opcion: bytes = Form(...)):
 # Cargamos los datos de CV y convertimos a html
 @app.get('/get-cvs')
 async def get_all_cvs():
-    # Llamamos al procesamiento de datos (extraemos tanto un df con datos procesados como en bruto)
-    _, df_cv_raw = run_processing_data_cv(raw_cvs_SoftwareDev, raw_cvs_NetworkEng, raw_cvs_IADev)
-    
-    # Remover caracteres '\n' salto de lineas
-    df_cv_raw.iloc[:, 1] = df_cv_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
+    try:    
+        # Remover caracteres '\n' salto de lineas
+        df_cv_raw.iloc[:, 1] = df_cv_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
 
-    # Convertir el DataFrame a HTML
-    html = df_cv_raw.to_html(index=False)
-    html = html.strip()
-    html_encoded = html.encode('utf-8')
-    return html_encoded
+        # Convertir el DataFrame a HTML
+        html = df_cv_raw.to_html(index=False)
+        html = html.strip()
+        html_encoded = html.encode('utf-8')
+        return html_encoded # Retornamos a cliente para ser mostrado
+    except Exception as e:
+        print('Error. Se produjo un error al obtener los CVs')
+        raise HTTPException(status_code=400, detail=str(e))
+    
 
 
 # Cargamos los datos de Ofertas y convertimos a html
 @app.get('/get-jobs')
 async def get_all_jobs():
-    # Llamamos al procesamiento de datos (extraemos tanto un df con datos procesados como en bruto)
-    _, df_jobs_raw = run_processing_data_job(raw_jobs_SoftwareDev, raw_jobs_NetworkEng, raw_jobs_IADev)
-    
-    # Remover caracteres '\n' salto de lineas
-    df_jobs_raw.iloc[:, 1] = df_jobs_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
+    try:
+        # Llamamos al procesamiento de datos (retorna dos df, uno con los datos procesados semanticamente y otro en bruto)
+        # Usaremos el df en bruto (cuyo texto no ha sido procesado semanticamente)
+        _, df_jobs_raw = run_processing_data_job(raw_jobs_SoftwareDev, raw_jobs_NetworkEng, raw_jobs_IADev)
+        
+        # Remover caracteres '\n' salto de lineas
+        df_jobs_raw.iloc[:, 1] = df_jobs_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
 
-    # Convertir el DataFrame a HTML
-    html = df_jobs_raw.to_html(index=False)
-    html = html.strip()
-    html_encoded = html.encode('utf-8')
-    return html_encoded
+        # Convertir el DataFrame a HTML
+        html = df_jobs_raw.to_html(index=False)
+        html = html.strip()
+        html_encoded = html.encode('utf-8')
+        return html_encoded # Retornamos a cliente para ser mostrado
+    except Exception as e:
+        print('Error. Se produjo un error al obtener las ofertas laborales')
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Funciones y endpoint para calcular la similitud de CVs para una oferta dada
+def clean_df_original(df_cv, df_job):
+    df_cv.iloc[:, 1] = df_cv.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
+    df_job.iloc[:, 1] = df_job.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
+    return df_cv, df_job
+
+def mean_embedding_job_id(id_job):
+    # Calcular la media de los embeddings
+    mean_embedding_job = np.mean(embeddings_job[id_job], axis=0)
+    return mean_embedding_job
+
+def id_to_textCV(list_cv_id_simil, df_cvs):
+    id_cv = [id_[0] for id_ in list_cv_id_simil]
+    text_cv = df_cvs.loc[id_cv, 'cv']
+    return text_cv
+
+# Llamada al modelo (calcula y retorna el id con el texto de los cv mas similares)
+@app.post('/call_model_to_similarities')
+async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
+    try:
+        # retornamos el embedding de la oferta de trabajo con id dado
+        embedding_job=mean_embedding_job_id(id)
+
+        # Iteramos sobre todos los cv de nuestros embeddings, almacenando la similitud dada por la oferta pasada por parametro
+        list_cosine_cv = []
+        for cv in range(len(embeddings_cv)):
+            # Calcular la media de los embeddings
+            mean_embedding_cv = np.mean(embeddings_cv[cv], axis=0)
+            list_cosine_cv.append(cosine_similarity([embedding_job], [mean_embedding_cv])[0, 0])
+
+        # Almacenamos unicamente los cv cuya similitud sea mayor o igual al umbral dado por parametro, ordenado descendentemente
+        values_cv_threshold = sorted([[i,value] for i,value in enumerate(list_cosine_cv) if value >= similarity],
+                                    key=lambda x: x[1], reverse=True)
+        
+        # Limpiamos los saltos de lineas '\n' de los dataframes originales (sin procesar previamente)
+        df_cvs, df_jobs = clean_df_original(df_cv_raw, df_job_raw)
+
+        # Extraemos el texto correspondiente al id de los cv con el umbral retornado
+        text_cv = id_to_textCV(values_cv_threshold, df_cvs)
+        text_job = df_jobs['job'][id]
+        print([cv for cv in text_cv])
+        print(text_job)
+        return {"cv": text_cv, "job": text_job}
+    except Exception as e:
+        print('Error. No se ha podido procesar correctamente el calculo de similitud.')
+        raise HTTPException(status_code=400, detail=str(e))
