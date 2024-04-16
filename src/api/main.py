@@ -126,10 +126,10 @@ async def get_all_jobs():
         raise HTTPException(status_code=400, detail=str(e))
 
 # Funciones y endpoint para calcular la similitud de CVs para una oferta dada
-def clean_df_original(df_cv, df_job):
+def clean_df_original(df_cv):
     df_cv.iloc[:, 1] = df_cv.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
-    df_job.iloc[:, 1] = df_job.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
-    return df_cv, df_job
+    #df_job.iloc[:, 1] = df_job.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
+    return df_cv #df_job
 
 def mean_embedding_job_id(id_job):
     # Calcular la media de los embeddings
@@ -160,15 +160,12 @@ async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
                                     key=lambda x: x[1], reverse=True)
         
         # Limpiamos los saltos de lineas '\n' de los dataframes originales (sin procesar previamente)
-        df_cvs, df_jobs = clean_df_original(df_cv_raw, df_job_raw)
+        df_cvs= clean_df_original(df_cv_raw)
 
         # Extraemos el texto correspondiente al id de los cv con el umbral retornado
         text_cv = id_to_textCV(values_cv_threshold, df_cvs)
-        text_job = df_jobs['job'][id]
+        #text_job = df_jobs['job'][id]
 
-        print('CVs y Job')
-        print([cv for cv in text_cv])
-        print(text_job)
         print('Longitud de cvs',len(text_cv))
 
         return [{"id": id, "cv": cv} for id, cv in text_cv.items()] # convertimos a array antes depasar al front
