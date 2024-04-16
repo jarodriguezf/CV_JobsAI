@@ -78,16 +78,86 @@
         .catch(error => console.error('Error:', error));  
     }
 
-    // Funcion para realizar el calculo de la similitud del coseno (mostramos en pantalla resultados)
-    async function mostrarSimilitud(){
+    // Función para obtener los valores de los inputs
+    async function getInputValues() {
+        const ofertaLaboralId = parseInt(document.getElementById('quantity').value);
+        const gradoSimilitud = parseFloat(document.querySelector('select[name="threshold"]').value);
+        return { ofertaLaboralId, gradoSimilitud };
+    }
 
+    // Función para crear el contenedor de resultados
+    function createResultsContainer() {
+        const resultsContainer = document.createElement('div');
+        resultsContainer.id = 'resultsContainer';
+        resultsContainer.style.width = '50%'; 
+        resultsContainer.style.margin = '0 auto'; 
+        return resultsContainer;
+    }
+
+    // Función para añadir el encabezado y el título principal
+    function addHeader(resultsContainer, ofertaLaboralId) {
+        const jobOfferHeader = document.createElement('h2');
+        jobOfferHeader.id = 'jobOfferHeader';
+        jobOfferHeader.style.marginLeft = '15%';
+        jobOfferHeader.style.marginBottom = '20px';
+        jobOfferHeader.textContent = 'CVs mas aptos para la oferta laboral con ID: ' + ofertaLaboralId;
+        resultsContainer.appendChild(jobOfferHeader);
+    }
+
+    // Función para añadir la lista de CVs
+    function addCVList(resultsContainer, similarCVs) {
+        const cvList = document.createElement('ul');
+        cvList.id = 'cvList';
+        let count = 0;
+        let page = 1;
+        for (const cv of similarCVs) {
+            const cvListItem = document.createElement('li');
+            cvListItem.innerHTML = `<b>ID:</b> <i>${cv.id}</i><br><b>CV:</b> <i>${cv.cv}</i>`;
+            cvListItem.style.border= '1px solid #ccc';
+            cvListItem.style.borderRadius = '5px';
+            cvListItem.style.marginBottom = '10px';
+            cvListItem.style.padding  = '10px';
+            cvListItem.style.backgroundColor = '#F4F8F9';
+            cvListItem.className = `page-${page}`;
+            cvListItem.style.display = page === 1 ? 'block' : 'none';
+            cvList.appendChild(cvListItem);
+            count++;
+            if (count % 5 === 0 && count < similarCVs.length) {
+                page++;
+            }
+        }
+        resultsContainer.appendChild(cvList);
+    }
+
+    // Función para añadir los botones de paginación
+    function addPaginationButtons(resultsContainer, page) {
+        const paginationContainer = document.createElement('div');
+        paginationContainer.id = 'paginationContainer';
+        paginationContainer.style.textAlign = 'right';
+        for (let i = 1; i <= page; i++) {
+            const paginationButton = document.createElement('button');
+            paginationButton.textContent = i;
+            paginationButton.className = 'btn btn-primary btn-sm mb-2';
+            paginationButton.style.margin = '0 5px';
+            paginationButton.onclick = function() {
+                const items = document.querySelectorAll('#cvList li');
+                items.forEach(item => {
+                    item.style.display = item.className === `page-${i}` ? 'block' : 'none';
+                });
+            };
+            paginationContainer.appendChild(paginationButton);
+        }
+        resultsContainer.appendChild(paginationContainer);
+    }
+
+    // Función principal que utiliza las funciones anteriores
+    async function mostrarSimilitud() {
         // Eliminar resultados anteriores
         const oldResults = document.getElementById('resultsContainer');
         if (oldResults) oldResults.remove();
 
         // Obtener los valores de los inputs
-        const ofertaLaboralId = parseInt(document.getElementById('quantity').value);
-        const gradoSimilitud = parseFloat(document.querySelector('select[name="threshold"]').value);
+        const { ofertaLaboralId, gradoSimilitud } = await getInputValues();
 
         if (Number.isInteger(ofertaLaboralId) && ofertaLaboralId >= 0){ 
             // llamada a funcion que retorna los cv mas similares
@@ -96,70 +166,19 @@
             console.log(similarCVs)
             
             // Creamos contenedor para pintar resultados
-            const resultsContainer = document.createElement('div');
-            resultsContainer.id = 'resultsContainer';
-            resultsContainer.style.width = '50%'; 
-            resultsContainer.style.margin = '0 auto'; 
+            const resultsContainer = createResultsContainer();
 
             // Añadir header y titulo principal en funcion de la oferta dada
-            const jobOfferHeader = document.createElement('h2');
-            jobOfferHeader.id = 'jobOfferHeader';
-            jobOfferHeader.style.marginLeft = '15%';
-            jobOfferHeader.style.marginBottom = '20px';
-            jobOfferHeader.textContent = 'CVs mas aptos para la oferta laboral con ID: ' + ofertaLaboralId;
-            resultsContainer.appendChild(jobOfferHeader);
+            addHeader(resultsContainer, ofertaLaboralId);
             
-            // Añadir header y titulo principal en funcion de la oferta dada
-            const separator = document.createElement('hr');
-            resultsContainer.appendChild(separator);
-
             // Añadir a listas los CVs (ademas de estilos a cada lista)
-            const cvList = document.createElement('ul');
-            cvList.id = 'cvList';
-            let count = 0;
-            let page = 1;
-            for (const cv of similarCVs) {
-                const cvListItem = document.createElement('li');
-                cvListItem.innerHTML = `<b>ID:</b> <i>${cv.id}</i><br><b>CV:</b> <i>${cv.cv}</i>`;
-                cvListItem.style.border= '1px solid #ccc';
-                cvListItem.style.borderRadius = '5px';
-                cvListItem.style.marginBottom = '10px';
-                cvListItem.style.padding  = '10px';
-                cvListItem.style.backgroundColor = '#F4F8F9';
-                cvListItem.className = `page-${page}`;
-                cvListItem.style.display = page === 1 ? 'block' : 'none';
-                cvList.appendChild(cvListItem);
-                count++;
-                if (count % 5 === 0 && count < similarCVs.length) {
-                    page++;
-                }
-            }
-            resultsContainer.appendChild(cvList);
+            addCVList(resultsContainer, similarCVs);
 
-            // Añadir botones de paginacion al documento
-            const paginationContainer = document.createElement('div');
-            paginationContainer.id = 'paginationContainer';
-            paginationContainer.style.textAlign = 'right';
-            for (let i = 1; i <= page; i++) {
-                const paginationButton = document.createElement('button');
-                paginationButton.textContent = i;
-                paginationButton.className = 'btn btn-primary btn-sm mb-2';
-                paginationButton.style.margin = '0 5px';
-                paginationButton.onclick = function() {
-                    const items = document.querySelectorAll('#cvList li');
-                    items.forEach(item => {
-                        item.style.display = item.className === `page-${i}` ? 'block' : 'none';
-                    });
-                };
-                paginationContainer.appendChild(paginationButton);
-            }
-            resultsContainer.appendChild(paginationContainer);
+            // Añadir botones de paginacion al documento 
+            addPaginationButtons(resultsContainer, Math.ceil(similarCVs.length / 5));
 
-            // Añadir el resultado pintado al contenedor inicial
+            // Agregamos los contenedores creados en las funciones al documento
             document.body.appendChild(resultsContainer);
-
-        }else{
-            alert('Error. Solo es posible introducir numeros enteros mayor que 0. Asegurate que sean enteros. Ej:(0-10)')
         }
     }
     
