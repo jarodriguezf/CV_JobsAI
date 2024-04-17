@@ -187,15 +187,17 @@
         resultsContainer.appendChild(paginationContainer);
     }
 
-    // Función principal que utiliza las funciones anteriores
+    // Función principal que utiliza las funciones anteriores (Calculo de similitud)
     async function mostrarSimilitud() {
-        // Eliminar resultados anteriores
+
+        // Eliminar resultados anteriores (si se genero resultados previamente)
         const oldResults = document.getElementById('resultsContainer');
         if (oldResults) oldResults.remove();
 
         // Obtener los valores de los inputs
         const { ofertaLaboralId, gradoSimilitud } = await getInputValues();
 
+        // Comprobamos si los datos obtenidos son validos
         if (Number.isInteger(ofertaLaboralId) && ofertaLaboralId >= 0){ 
 
             // Crear e insertar el indicador de carga de datos
