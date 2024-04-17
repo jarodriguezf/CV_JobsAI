@@ -82,15 +82,15 @@
             alert(message);
         }
 
-        // Función para guardar el CV
-        function saveCV() {
-            console.log(opcion)
+        // Función para guardar datos
+        function saveData(dataType) {
+            console.log(dataType, opcion)
             
-            const cvInput = document.getElementById('cvInput').value; // Obtenemos objeto del textArea
+            const input = document.getElementById(dataType === 'CV' ? 'cvInput' : 'jobOfferInput').value; // Obtenemos objeto del textArea
             const formData = new FormData();
-            formData.append('data', cvInput);
+            formData.append('data', input);
             formData.append('opcion', opcion);
-            fetch('/save-cv', {
+            fetch(`/save-data/${dataType}`, {
                 method: 'POST',
                 body: formData // Enviamos a la API los datos
             })
@@ -106,26 +106,13 @@
         }
 
         // Función para guardar el CV
+        function saveCV() {
+            saveData('CV');
+        }
+
+        // Función para guardar la oferta de trabajo
         function saveJobs() {
-            console.log(opcion)
-            
-            const jobInput = document.getElementById('jobOfferInput').value; // Obtenemos objeto del textArea
-            const formData = new FormData();
-            formData.append('data', jobInput);
-            formData.append('opcion', opcion);
-            fetch('/save-job-offer', {
-                method: 'POST',
-                body: formData // Enviamos a la API los datos
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.message){
-                    showAlert(data.message);//Muestra el mensaje de confirmacion
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
+            saveData('Jobs');
         }
 
     </script>
