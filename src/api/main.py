@@ -7,11 +7,21 @@ from fastapi.templating import Jinja2Templates
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from fastapi import Request
+from joblib import Memory
 from automation_data_save import run_automation_save_data# type: ignore
 from automation_cv_data_processing import run_processing_data_cv# type: ignore
 from automation_job_data_processing import run_processing_data_job # type: ignore
 from automation_scripts_model.automation_cv_modelling import run_automation_modelling_cv# type: ignore
 from automation_scripts_model.automation_job_modelling import run_automation_modelling_job# type: ignore
+
+# -- GUARDAR SCRIPTS EN CACHE --
+cachedir = '/cache'
+memory = Memory(cachedir, verbose=0)
+
+run_processing_data_cv = memory.cache(run_processing_data_cv)
+run_processing_data_job = memory.cache(run_processing_data_job)
+run_automation_modelling_cv = memory.cache(run_automation_modelling_cv)
+run_automation_modelling_job = memory.cache(run_automation_modelling_job)
 
 # -- INICIO DE VARIABLES GLOBALES Y INSTANCIAS DE PROCESAMIENTO Y CARGA
 
@@ -25,22 +35,17 @@ templates_landing = Jinja2Templates(directory="static/landing_page")
 insert_data_template = Jinja2Templates(directory="static/insert-data-pages")
 mostrar_cribar = Jinja2Templates(directory="static/show-similarities-page")
 
-# Cargamos los txt de CVs
-raw_cvs_SoftwareDev = open('../../data/raw_data/Data_CV_SoftwareDeveloper.txt',encoding='utf-8').read()
-raw_cvs_NetworkEng = open('../../data/raw_data/Data_CV_NetworkEngineer.txt',encoding='utf-8').read()
-raw_cvs_IADev= open('../../data/raw_data/Data_CV_IADeveloper.txt',encoding='utf-8').read()
-# Cargamos los txt de Ofertas laborales
-raw_jobs_SoftwareDev = open('../../data/raw_data/Data_Jobs_SoftwareDeveloper.txt',encoding='utf-8').read()
-raw_jobs_NetworkEng = open('../../data/raw_data/Data_Jobs_NetworkEngineer.txt',encoding='utf-8').read()
-raw_jobs_IADev= open('../../data/raw_data/Data_Jobs_IADeveloper.txt',encoding='utf-8').read()
-
-# Llamamos al procesamiento de datos (retorna dos df, uno con los datos procesados semanticamente y otro en bruto)
-df_cv_processed, df_cv_raw = run_processing_data_cv(raw_cvs_SoftwareDev, raw_cvs_NetworkEng, raw_cvs_IADev)
-df_jobs_processed, df_job_raw = run_processing_data_job(raw_jobs_SoftwareDev,raw_jobs_NetworkEng,raw_jobs_IADev)
 
 # Carga modelo y generar embeddings
-embeddings_cv = run_automation_modelling_cv(df_cv_processed)
-embeddings_job= run_automation_modelling_job(df_jobs_processed)
+def generate_embeddings():
+    # Obtén los resultados almacenados en caché de run_processing_data_cv
+    df_cv_processed, df_cv_raw = run_processing_data_cv(*load_txt('CV'))
+    df_jobs_processed, _ = run_processing_data_job(*load_txt('Jobs'))
+
+    embeddings_cv = run_automation_modelling_cv(df_cv_processed)
+    embeddings_job= run_automation_modelling_job(df_jobs_processed)
+
+    return embeddings_cv, embeddings_job, df_cv_raw
 
 # -- INICIO DE ENDPOINTS --
 
@@ -65,69 +70,70 @@ async def home(request: Request):
 
 
 
-# Endpoint para el botón de guardar CV
-@app.post("/save-cv")
-async def save_cv(data: bytes = Form(...), opcion: bytes = Form(...)):
+# Endpoint para el botón de guardar datos
+@app.post("/save-data/{data_type}")
+async def save_data(data_type: str, data: bytes = Form(...), opcion: bytes = Form(...)):
     try:
         # Llamada al script de automatizacion del guardado de datos
         data_str = data.decode("utf-8")
         opcion_str = opcion.decode("utf-8")
   
-        run_automation_save_data(data_str, 'CV',opcion_str)
-        return {"message": "CV guardado correctamente"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-
-# Endpoint para el botón de guardar oferta de trabajo
-@app.post("/save-job-offer")
-async def save_job_offer(data: bytes = Form(...), opcion: bytes = Form(...)):
-    try:
-        # Llamada al script de automatizacion del guardado de datos
-        data_str = data.decode("utf-8")
-        opcion_str = opcion.decode("utf-8")
-       
-        run_automation_save_data(data_str, 'Jobs',opcion_str)
-        return {"message": "Oferta guardada correctamente"}
+        run_automation_save_data(data_str, data_type, opcion_str)
+        return {"message": f"{data_type} guardado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
+
+# Funcion para obtener los txt segun el tipo de dato (CV/Jobs)
+def const_file_path(id_name):
+    # Cargamos los txt de CVs
+    file_paths = [f'../../data/raw_data/Data_{id_name}_SoftwareDeveloper.txt', 
+                  f'../../data/raw_data/Data_{id_name}_NetworkEngineer.txt', 
+                  f'../../data/raw_data/Data_{id_name}_IADeveloper.txt']
+    return file_paths
+
+# Abrimos los txt y almacenamos todos en el vector
+def load_txt(id_name):
+    raw_cvs = []
+    for file_path in const_file_path(id_name):
+        try:
+            with open(file_path, encoding='utf-8') as f:
+                raw_cvs.append(f.read())
+        except IOError:
+            print(f"Error: No se pudo abrir o leer el archivo {file_path}")
+    return raw_cvs
+
+# Cargamos datos y procesamos a html
+def get_data(id_name, processing_function):
+    try:
+        # Llamamos al procesamiento de datos (retorna dos df, uno con los datos procesados semanticamente y otro en bruto)
+        _, df_raw = processing_function(*load_txt(id_name))
+
+        # Remover caracteres '\n' salto de lineas
+        df_raw.iloc[:, 1] = df_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
+
+        # Convertir el DataFrame a HTML
+        html = df_raw.to_html(index=False)
+        html = html.strip()
+        html_encoded = html.encode('utf-8')
+        return html_encoded # Retornamos a cliente para ser mostrado
+    except Exception as e:
+        print(f'Error. Se produjo un error al obtener los {id_name}')
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 # Cargamos los datos de CV y convertimos a html
 @app.get('/get-cvs')
-async def get_all_cvs():
-    try:    
-        # Remover caracteres '\n' salto de lineas
-        df_cv_raw.iloc[:, 1] = df_cv_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
-
-        # Convertir el DataFrame a HTML
-        html = df_cv_raw.to_html(index=False)
-        html = html.strip()
-        html_encoded = html.encode('utf-8')
-        return html_encoded # Retornamos a cliente para ser mostrado
-    except Exception as e:
-        print('Error. Se produjo un error al obtener los CVs')
-        raise HTTPException(status_code=400, detail=str(e))
+async def get_all_cvs():   
+    return get_data('CV', run_processing_data_cv)
+   
     
-
 
 # Cargamos los datos de Ofertas y convertimos a html
 @app.get('/get-jobs')
 async def get_all_jobs():
-    try:
-        # Remover caracteres '\n' salto de lineas
-        df_job_raw.iloc[:, 1] = df_job_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
-
-        # Convertir el DataFrame a HTML
-        html = df_job_raw.to_html(index=False)
-        html = html.strip()
-        html_encoded = html.encode('utf-8')
-        return html_encoded # Retornamos a cliente para ser mostrado
-    except Exception as e:
-        print('Error. Se produjo un error al obtener las ofertas laborales')
-        raise HTTPException(status_code=400, detail=str(e))
+    return get_data('Jobs', run_processing_data_job)
 
 
 
@@ -136,7 +142,7 @@ def clean_df_original(df_cv):
     df_cv.iloc[:, 1] = df_cv.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
     return df_cv 
 
-def mean_embedding_job_id(id_job):
+def mean_embedding_job_id(id_job, embeddings_job):
     # Calcular la media de los embeddings
     mean_embedding_job = np.mean(embeddings_job[id_job], axis=0)
     return mean_embedding_job
@@ -164,11 +170,14 @@ def sorted_threshold_cv(list_cosine_cv, similarity):
 @app.post('/call_model_to_similarities')
 async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
     try:
+        # Generamos los embeddings correspondientes (ademas de el procesamiento de los df)
+        embeddings_cv, embeddings_job, df_cv_raw=generate_embeddings()
+
         # retornamos el embedding de la oferta de trabajo con id dado
-        embedding_job=mean_embedding_job_id(id)
+        embeddings_job=mean_embedding_job_id(id, embeddings_job)
 
         # Añadimos a una lista el calculo de las similitudes
-        list_cosine_cv= insert_list_cosine_similarities(embeddings_cv, embedding_job)
+        list_cosine_cv= insert_list_cosine_similarities(embeddings_cv, embeddings_job)
 
         # Almacenamos unicamente los cv cuya similitud sea mayor o igual al umbral dado por parametro, ordenado descendentemente
         values_cv_threshold= sorted_threshold_cv(list_cosine_cv, similarity)
