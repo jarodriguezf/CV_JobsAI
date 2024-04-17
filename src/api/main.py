@@ -1,11 +1,9 @@
 import sys
-from io import BytesIO
 sys.path.append('../../data/automation_scripts_data/')
 sys.path.append('../modelling/')
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from fastapi import Request
@@ -119,15 +117,11 @@ async def get_all_cvs():
 @app.get('/get-jobs')
 async def get_all_jobs():
     try:
-        # Llamamos al procesamiento de datos (retorna dos df, uno con los datos procesados semanticamente y otro en bruto)
-        # Usaremos el df en bruto (cuyo texto no ha sido procesado semanticamente)
-        _, df_jobs_raw = run_processing_data_job(raw_jobs_SoftwareDev, raw_jobs_NetworkEng, raw_jobs_IADev)
-        
         # Remover caracteres '\n' salto de lineas
-        df_jobs_raw.iloc[:, 1] = df_jobs_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
+        df_job_raw.iloc[:, 1] = df_job_raw.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
 
         # Convertir el DataFrame a HTML
-        html = df_jobs_raw.to_html(index=False)
+        html = df_job_raw.to_html(index=False)
         html = html.strip()
         html_encoded = html.encode('utf-8')
         return html_encoded # Retornamos a cliente para ser mostrado
@@ -140,8 +134,7 @@ async def get_all_jobs():
 # Funciones y endpoint para calcular la similitud de CVs para una oferta dada
 def clean_df_original(df_cv):
     df_cv.iloc[:, 1] = df_cv.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
-    #df_job.iloc[:, 1] = df_job.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
-    return df_cv #df_job
+    return df_cv 
 
 def mean_embedding_job_id(id_job):
     # Calcular la media de los embeddings
@@ -185,7 +178,6 @@ async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
 
         # Extraemos el texto correspondiente al id de los cv con el umbral retornado
         text_cv = id_to_textCV(values_cv_threshold, df_cvs)
-        #text_job = df_jobs['job'][id]
 
         print('Longitud de cvs',len(text_cv))
 
