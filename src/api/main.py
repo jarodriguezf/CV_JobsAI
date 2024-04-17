@@ -42,6 +42,7 @@ def generate_embeddings():
     df_cv_processed, df_cv_raw = run_processing_data_cv(*load_txt('CV'))
     df_jobs_processed, _ = run_processing_data_job(*load_txt('Jobs'))
 
+    # Extraemos los embeddings del df procesado
     embeddings_cv = run_automation_modelling_cv(df_cv_processed)
     embeddings_job= run_automation_modelling_job(df_jobs_processed)
 
@@ -92,7 +93,7 @@ def const_file_path(id_name):
                   f'../../data/raw_data/Data_{id_name}_IADeveloper.txt']
     return file_paths
 
-# Abrimos los txt y almacenamos todos en el vector
+# Abrimos los txt y almacenamos todo en el vector
 def load_txt(id_name):
     raw_cvs = []
     for file_path in const_file_path(id_name):
@@ -123,27 +124,27 @@ def get_data(id_name, processing_function):
 
 
 
-# Cargamos los datos de CV y convertimos a html
+# llamada para mostrar los datos de CVs
 @app.get('/get-cvs')
 async def get_all_cvs():   
     return get_data('CV', run_processing_data_cv)
    
     
 
-# Cargamos los datos de Ofertas y convertimos a html
+# Llamada para mostrar los datos de ofertas laborales
 @app.get('/get-jobs')
 async def get_all_jobs():
     return get_data('Jobs', run_processing_data_job)
 
 
 
-# Funciones y endpoint para calcular la similitud de CVs para una oferta dada
+# -- FUNCIONES Y ENDPOINT DE CALCULO DE SIMILITUD DEL COSENO --
+
 def clean_df_original(df_cv):
     df_cv.iloc[:, 1] = df_cv.iloc[:, 1].apply(lambda x: x.replace('\n', ' '))
     return df_cv 
 
 def mean_embedding_job_id(id_job, embeddings_job):
-    # Calcular la media de los embeddings
     mean_embedding_job = np.mean(embeddings_job[id_job], axis=0)
     return mean_embedding_job
 
@@ -170,7 +171,7 @@ def sorted_threshold_cv(list_cosine_cv, similarity):
 @app.post('/call_model_to_similarities')
 async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
     try:
-        # Generamos los embeddings correspondientes (ademas de el procesamiento de los df)
+        # Generamos los embeddings correspondientes (ademas de los df en bruto/originales sin procesar)
         embeddings_cv, embeddings_job, df_cv_raw=generate_embeddings()
 
         # retornamos el embedding de la oferta de trabajo con id dado
@@ -190,8 +191,7 @@ async def calculate_model(id: int = Form(...), similarity: float = Form(...)):
 
         print('Longitud de cvs',len(text_cv))
 
-        return [{"id": id, "cv": cv} for id, cv in text_cv.items()] # convertimos a array antes de pasar al front
-    
+        return [{"id": id, "cv": cv} for id, cv in text_cv.items()] # convertimos a JSON array antes de pasar al front  
     except Exception as e:
         print('Error. No se ha podido procesar correctamente el calculo de similitud.')
         raise HTTPException(status_code=400, detail=str(e))
