@@ -85,11 +85,14 @@
         // Función para guardar datos
         function saveData(dataType) {
             console.log(dataType, opcion)
-            
-            const input = document.getElementById(dataType === 'CV' ? 'cvInput' : 'jobOfferInput').value; // Obtenemos objeto del textArea
+
+            // Obtenemos objeto del textArea
+            const input = document.getElementById(dataType === 'CV' ? 'cvInput' : 'jobOfferInput').value; 
+
             const formData = new FormData();
             formData.append('data', input);
             formData.append('opcion', opcion);
+            
             fetch(`/save-data/${dataType}`, {
                 method: 'POST',
                 body: formData // Enviamos a la API los datos
