@@ -56,6 +56,43 @@
 </body>
 <script>
 
+    // Función que crea un contenedor con mensaje de carga
+    function createLoadIndicator() {
+        // Crear el contenedor del indicador de carga
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.id = 'loadingIndicator';
+        loadingIndicator.style.display = 'flex';
+        loadingIndicator.style.justifyContent = 'center';
+        loadingIndicator.style.alignItems = 'center';
+        loadingIndicator.style.fontSize = '1.5em';
+        loadingIndicator.style.color = '#3f51b5';
+
+        // Crear el elemento del spinner
+        const spinner = document.createElement('div');
+        spinner.style.border = '16px solid #f3f3f3'; // Color gris claro
+        spinner.style.borderTop = '16px solid #3f51b5'; // Color azul oscuro
+        spinner.style.borderRadius = '50%'; // Forma circular
+        spinner.style.width = '120px';
+        spinner.style.height = '120px';
+        spinner.style.animation = 'spin 2s linear infinite';
+
+        // Agregar el spinner al contenedor del indicador de carga
+        loadingIndicator.appendChild(spinner);
+
+        // Agregar el contenedor de indicador de carga al DOM primero
+        document.body.appendChild(loadingIndicator);
+    }
+
+    // Agregar la animación de giro al spinner
+    const style = document.createElement('style');
+    style.innerHTML = `
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    `;
+    document.head.appendChild(style);
+
     // Llamada a la api retornando objeto JSON con texto tanto de oferta laboral como CVs
     function getSimilarCVs(ofertaLaboralId, gradoSimilitud) {
         // Creamos tipo formData para almacenar valores y enviarlos a la api
@@ -160,11 +197,18 @@
         const { ofertaLaboralId, gradoSimilitud } = await getInputValues();
 
         if (Number.isInteger(ofertaLaboralId) && ofertaLaboralId >= 0){ 
+
+            // Crear e insertar el indicador de carga de datos
+            createLoadIndicator()
+
             // llamada a funcion que retorna los cv mas similares
             const similarCVs = await getSimilarCVs(ofertaLaboralId, gradoSimilitud);
-
             console.log(similarCVs)
-            
+
+            // ELiminar indicador de carga tras obtener datos requeridos
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.remove(); 
+
             // Creamos contenedor para pintar resultados
             const resultsContainer = createResultsContainer();
 
@@ -184,38 +228,29 @@
     
     // Función para preparar y mostrar la informacion acerca de los CV o ofertas
     function prepararYMostrarArchivo(tipo) {
-    // Hacer una petición GET a la API
-        if (tipo==='cv'){
-            fetch('/get-cvs')
-                .then(response => response.text())
-                .then(text => {
-                    // Eliminamos expresiones '\n'
-                    const trimmedtext = text.replace(/(?:\\r\\n|\\r|\\n)/g, '');
-                    // Abre una nueva pestaña
-                    const newTab = window.open();
+        // Determinar la URL basada en el tipo
+        let url = '';
+        if (tipo === 'cv') {
+            url = '/get-cvs';
+        } else if (tipo === 'ofertas') {
+            url = '/get-jobs';
+        }
 
-                    // Escribimos el html
-                    newTab.document.write(trimmedtext);
+        // Hacer una petición GET a la API
+        fetch(url)
+            .then(response => response.text())
+            .then(text => {
+                // Eliminamos expresiones '\n'
+                const trimmedtext = text.replace(/(?:\\r\\n|\\r|\\n)/g, '');
+                // Abre una nueva pestaña
+                const newTab = window.open();
 
-                    newTab.document.close();
-                })
-                .catch(error => console.error('Error:', error));
-        }else if (tipo==='ofertas'){
-            fetch('/get-jobs')
-                .then(response => response.text())
-                .then(text => {
-                    // Eliminamos expresiones '\n'
-                    const trimmedtext = text.replace(/(?:\\r\\n|\\r|\\n)/g, '');
-                    // Abre una nueva pestaña
-                    const newTab = window.open();
+                // Escribimos el html
+                newTab.document.write(trimmedtext);
 
-                    // Escribimos el html
-                    newTab.document.write(trimmedtext);
-
-                    newTab.document.close();
-                })
-                .catch(error => console.error('Error:', error));
-        }    
+                newTab.document.close();
+            })
+            .catch(error => console.error('Error:', error));
     }  
 
 </script>
