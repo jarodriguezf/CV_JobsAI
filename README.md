@@ -50,7 +50,7 @@ Como se puede ver, el proyecto en general esta enfocado en el sector tecnologico
 1. Mostrar los CVs guardados en el fichero.
 ![shows_cv](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/54d7ac0d-c80f-4edd-b64e-9f9a3ba3f607)
 
-2. Mostrar las ofertas laborales guardadas en el fichero:
+2. Mostrar las ofertas laborales guardadas en el fichero.
 ![shows_jobs](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/89e98ab6-6cc2-402d-a3ec-824e99df6cc7)
 
 3. A partir del ID de una oferta laboral, calcular los CVs mas aptos (mostrados de manera descendente y ajustando el umbral de similitud).
