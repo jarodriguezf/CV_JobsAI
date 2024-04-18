@@ -34,7 +34,7 @@ Como se puede ver, el proyecto en general esta enfocado en el sector tecnologico
 - Huggingface (transformers).
 - Git (Github flow).
 - Librerias de visualizacion de datos (matplotlib).
-- Lenguajes propios de web (html, css, javascript).
+- Lenguajes propios de web (html, bootstrap, javascript).
 
 ## Funcionamiento del aplicación 🚀
 
@@ -56,5 +56,8 @@ Como se puede ver, el proyecto en general esta enfocado en el sector tecnologico
 3. A partir del ID de una oferta laboral, calcular los CVs mas aptos (mostrados de manera descendente y ajustando el umbral de similitud).
 ![example_similarity](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/ede82f19-c106-4a66-9bd3-878dfd9a189f)
 
+## Conclusión 🎉
 
+Después de completar este proyecto de CV & Jobs AI, estoy satisfecho con el progreso logrado y el desarrollo de habilidades que ha implicado, desde la exploración de datos hasta la implementación del modelo.
 
+Este proyecto, aunque principalmente un ejercicio de aprendizaje personal, ha resultado en la creación de una herramienta funcional que demuestra la comprensión de los conceptos clave de IA y NLP. 
