@@ -34,6 +34,27 @@ Como se puede ver, el proyecto en general esta enfocado en el sector tecnologico
 - Huggingface (transformers).
 - Git (Github flow).
 - Librerias de visualizacion de datos (matplotlib).
-- Lenguaje spropios de web (html, css, javascript).
+- Lenguajes propios de web (html, css, javascript).
 
-## En construccion 🔨
+## Funcionamiento del aplicación 🚀
+
+- Al abrir a la app lo primero que visitaremos será la landing page, donde se presenta el proyecto y el funcionamiento del sistema.
+![landing_page_1](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/f1ccd57f-2ac7-449e-a109-a6dafee5ed72)
+
+- Hacemos click en 'Empieza ya!' y nos redirigirá a la pagina para insertar nuevos datos. Podemos añadir los curriculums o ofertas que queramos (además de poder especificar el area laboral que guardemos: Software, IA o Network).
+![insert_data_page](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/0d9f1c22-acf9-481b-af1c-daf64d7fe955)
+![areas_laborales](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/094c2a7b-cf97-452f-8f3a-4fa9574069d9)
+
+- En la seccion 'Cribar CV' podremos realizar tres funciones principales:
+
+1. Mostrar los CVs guardados en el fichero.
+![shows_cv](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/54d7ac0d-c80f-4edd-b64e-9f9a3ba3f607)
+
+2. Mostrar las ofertas laborales guardadas en el fichero:
+![shows_jobs](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/89e98ab6-6cc2-402d-a3ec-824e99df6cc7)
+
+3. A partir del ID de una oferta laboral, calcular los CVs mas aptos (mostrados de manera descendente y ajustando el umbral de similitud).
+![example_similarity](https://github.com/jarodriguezf/CV_JobsAI/assets/112967594/ede82f19-c106-4a66-9bd3-878dfd9a189f)
+
+
+
